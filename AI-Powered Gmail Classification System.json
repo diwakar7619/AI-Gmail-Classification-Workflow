@@ -1,0 +1,339 @@
+{
+  "name": "AI-Powered Gmail Classification System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "includeSpamTrash": true,
+          "sender": ""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -448,
+        0
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "REMOVED": "Credentials removed for public GitHub upload"
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        320
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "REMOVED": "Credentials removed for public GitHub upload"
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify this email into ONE category only.\n\nPossible categories:\n- Newsletter\n- Promotions\n- Receipts\n- Personal\n- OTP\n- Spam\n- Job\n- Misc\n\nEmail:\n\nFROM: {{ $json.From }}\n\nSUBJECT: {{ $json.Subject }}\n\nBODY:\n{{ $json.snippet }}\n\nRules:\n- OTP has highest priority\n- Order confirmations = Receipts\n- Human conversations = Personal\n- Marketing = Promotions\n- Use Misc only if uncertain\n\nReturn ONLY valid JSON:\n\n{\n  \"category\": \"CATEGORY_NAME\",\n  \"confidence\": 0.0\n}\n\nConfidence Rules:\n- confidence must be between 0 and 1\n- use high confidence (>0.85) when category is obvious\n- use medium confidence (0.6\u20130.85) when somewhat uncertain\n- use low confidence (<0.6) when ambiguous",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Newsletter\",\n        \"Promotions\",\n        \"Receipts\",\n        \"Personal\",\n        \"OTP\",\n        \"Spam\",\n        \"Job\",\n        \"Misc\"\n      ]\n    },\n    \"confidence\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    }\n  },\n  \"required\": [\"category\", \"confidence\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        208
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        320
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "REMOVED": "Credentials removed for public GitHub upload"
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "YOUR_RESOURCE_ID",
+              "name": "labelId",
+              "value": "={{\n{\n  \"Newsletter\": \"YOUR_GMAIL_LABEL_ID\",\n  \"Promotions\": \"CATEGORY_PROMOTIONS\",\n  \"Receipts\": \"YOUR_GMAIL_LABEL_ID\",\n  \"Personal\": \"YOUR_GMAIL_LABEL_ID\",\n  \"OTP\": \"YOUR_GMAIL_LABEL_ID\",\n  \"Spam\": \"SPAM\",\n  \"Job\": \"YOUR_GMAIL_LABEL_ID\",\n  \"Misc\": \"YOUR_GMAIL_LABEL_ID\"\n}[$json.output.category]\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": "={{ $json.labelId }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        -16
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Dynamic Gmail Labeler",
+      "webhookId": "YOUR_RESOURCE_ID",
+      "credentials": {
+        "REMOVED": "Credentials removed for public GitHub upload"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "YOUR_GMAIL_LABEL_ID"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        224
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Needs Review",
+      "webhookId": "YOUR_RESOURCE_ID",
+      "credentials": {
+        "REMOVED": "Credentials removed for public GitHub upload"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "YOUR_RESOURCE_ID",
+              "leftValue": "={{ $('Basic LLM Chain').item.json.output.confidence }}",
+              "rightValue": 0.8,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "YOUR_RESOURCE_ID",
+      "name": "Trusted"
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19e63b95fe9f8181",
+          "threadId": "19e63b95fe9f8181",
+          "snippet": "---------- Forwarded message --------- From: &lt;your-email@example.com&gt; Date: Tue, 26 May 2026, 08:41 Subject: Cancel Ticket To: &lt;your-email@example.com&gt; This is a system generated mail.",
+          "payload": {
+            "mimeType": "multipart/alternative"
+          },
+          "sizeEstimate": 12562,
+          "historyId": "1126223",
+          "internalDate": "1779789541000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "IMPORTANT",
+              "name": "IMPORTANT"
+            },
+            {
+              "id": "CATEGORY_PERSONAL",
+              "name": "CATEGORY_PERSONAL"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "ad ad <your-email@example.com>",
+          "Subject": "Fwd: Cancel Ticket",
+          "To": "Pratham Diwakar <your-email@example.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Trusted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trusted": {
+      "main": [
+        [
+          {
+            "node": "Dynamic Gmail Labeler",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Needs Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "YOUR_RESOURCE_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "253cce94b10468dcb12b7bdd9abcfa43563d1c0ae2314613857e2707db741b2b"
+  },
+  "id": "Vdar7vZsqx8sNZFl",
+  "tags": []
+}
