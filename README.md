@@ -48,14 +48,6 @@ An AI-powered Gmail automation workflow built using n8n, OpenAI, and Gmail API t
 
 ---
 
-## Workflow Screenshot
-
-Add workflow screenshots inside:
-
-
-
----
-
 ## Installation
 
 1. Import workflow JSON into n8n
