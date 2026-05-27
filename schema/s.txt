@@ -1,1 +1,45 @@
+STRUCTURED OUTPUT SCHEMA
+{
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "Newsletter",
+        "Promotions",
+        "Receipts",
+        "Personal",
+        "OTP",
+        "Spam",
+        "Job",
+        "Misc"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "required": [
+    "category",
+    "confidence"
+  ]
+}
+WHY THIS SCHEMA IS IMPORTANT
+The schema guarantees structured AI responses.
 
+Benefits:
+- Prevents invalid outputs
+- Maintains workflow reliability
+- Ensures Gmail labels map correctly
+- Improves automation stability
+- Creates predictable AI behavior
+CONFIDENCE SCORING LOGIC
+IF confidence > 0.8
+→ Apply Gmail label automatically
+
+ELSE
+→ Route email to "Needs Review"
+
+This creates a human-in-the-loop safety system.
