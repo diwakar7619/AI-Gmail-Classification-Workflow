@@ -1,1 +1,52 @@
+EMAIL CLASSIFICATION PROMPT
+Classify this email into ONE category only.
 
+Possible categories:
+- Newsletter
+- Promotions
+- Receipts
+- Personal
+- OTP
+- Spam
+- Job
+- Misc
+
+Email:
+
+FROM: {{ $json.From }}
+
+SUBJECT: {{ $json.Subject }}
+
+BODY:
+{{ $json.snippet }}
+
+Rules:
+- OTP has highest priority
+- Order confirmations = Receipts
+- Human conversations = Personal
+- Marketing emails = Promotions
+- Use Misc only if uncertain
+
+Return ONLY valid JSON:
+
+{
+  "category": "CATEGORY_NAME",
+  "confidence": 0.0
+}
+
+Confidence Rules:
+- confidence must be between 0 and 1
+- use high confidence (>0.85) when category is obvious
+- use medium confidence (0.6–0.85) when somewhat uncertain
+- use low confidence (<0.6) when ambiguous
+WHY THIS PROMPT IS IMPORTANT
+The prompt teaches the AI:
+- How to classify emails
+- Which categories exist
+- Which categories have higher priority
+- How confidence scoring should behave
+
+Without this prompt:
+- Email classification would be inconsistent
+- Labels would become unreliable
+- Inbox automation quality would decrease
